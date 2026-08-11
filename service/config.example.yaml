@@ -1,0 +1,13 @@
+# Configuration of the ELIXIR FER plugin service
+#
+# Copy this file to config.yaml, or point ELIXIR_FER_PLUGIN_CONFIG_PATH
+# to it. Both camelCase and snake_case keys are accepted.
+
+dsw:
+    # Base URL of the DSW API, used when the plugin does not send one
+    apiUrl: https://elixir-fer.dsw.elixir-europe.org/wizard-api
+    # Additional API URLs that the plugin is allowed to use, e.g. for other
+    # tenants; the apiUrl above is always allowed
+    allowedApiUrls: []
+    # Request timeout in seconds
+    timeout: 10

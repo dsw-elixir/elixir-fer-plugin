@@ -214,3 +214,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Plugin service config (may contain the DSW API key)
+config.yaml
