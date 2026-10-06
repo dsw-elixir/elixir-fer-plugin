@@ -35,6 +35,12 @@ users that process them are configured in the plugin settings in the wizard.
 
 ## Changelog
 
+### 0.2.0
+
+- Updated DSW Plugin SDK to 0.11.0
+- Updated dependencies (incl. Vite 8 and TypeScript 6 for the plugin, FastAPI
+  0.142 and Starlette 1.7 for the service)
+
 ### 0.1.0
 
 Initial version
