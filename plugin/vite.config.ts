@@ -4,7 +4,7 @@ import { emitManifestPlugin } from '@ds-wizard/plugin-sdk/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-import { pluginMetadata } from './src/metadata'
+import { pluginMetadata } from './src/metadata.ts'
 
 export default defineConfig(({ mode }) => {
     const isProd = mode === 'production'
@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
 
         resolve: {
             alias: {
-                '@': path.resolve(__dirname, 'src'),
+                '@': path.resolve(import.meta.dirname, 'src'),
             },
         },
 
@@ -64,9 +64,9 @@ export default defineConfig(({ mode }) => {
             emptyOutDir: true,
 
             // Single-file bundle (handy for plugin loaders)
-            rollupOptions: {
+            rolldownOptions: {
                 output: {
-                    inlineDynamicImports: true,
+                    codeSplitting: false,
                 },
                 plugins: [emitManifestPlugin(pluginMetadata)],
             },

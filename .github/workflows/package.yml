@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: '[setup] Checkout Project'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: '[setup] Node.js ${{ matrix.node-version }}'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
             node-version: ${{ env.NODE_VERSION }}
 
@@ -30,7 +30,7 @@ jobs:
         run: npm run build
 
       - name: '[dist] Create artifact'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: plugin
           path: ./plugin/dist
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: '[setup] Checkout Project'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: '[setup] Install uv'
         uses: astral-sh/setup-uv@v7
@@ -70,7 +70,7 @@ jobs:
         run: make build
 
       - name: '[dist] Create artifact'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: service
           path: ./service/dist

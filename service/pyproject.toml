@@ -1,6 +1,6 @@
 [project]
 name = "elixir-fer-plugin-service"
-version = "0.1.0"
+version = "0.2.0"
 description = "Plugin service for supporting procedures related to ELIXIR FAIR-Enabling Resources"
 keywords = ["wizard", "plugin"]
 license = "MIT"
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.9.25,<0.10.0"]
+requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

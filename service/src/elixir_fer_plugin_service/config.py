@@ -82,7 +82,7 @@ _config: Config | None = None
 
 
 def get_config() -> Config:
-    global _config  # noqa: PLW0603
+    global _config  # ruff: ignore[global-statement]
     if _config is None:
         _config = load_config()
     return _config
@@ -90,5 +90,5 @@ def get_config() -> Config:
 
 def set_config(config: Config | None) -> None:
     # Used at startup, so that config errors are reported right away
-    global _config  # noqa: PLW0603
+    global _config  # ruff: ignore[global-statement]
     _config = config
