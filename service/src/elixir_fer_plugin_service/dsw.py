@@ -39,7 +39,7 @@ class User(CamelCaseModel):
 
     @pydantic.model_validator(mode='before')
     @classmethod
-    def _flatten_role(cls, data: typing.Any) -> typing.Any:  # noqa: ANN401
+    def _flatten_role(cls, data: typing.Any) -> typing.Any:  # ruff: ignore[any-type]
         # DSW returns the role either as an object or as a plain name
         if not isinstance(data, dict):
             return data
@@ -125,7 +125,7 @@ class ProjectProgress(CamelCaseModel):
     chapters: list[ChapterProgress] = pydantic.Field(default_factory=list)
 
 
-def _answered_indication(indications: typing.Any) -> tuple[int, int]:  # noqa: ANN401
+def _answered_indication(indications: typing.Any) -> tuple[int, int]:  # ruff: ignore[any-type]
     # The report has several indications, the answered one counts all the
     # questions, while the phases one only those of the current phase
     chosen = None
@@ -146,7 +146,7 @@ def _answered_indication(indications: typing.Any) -> tuple[int, int]:  # noqa: A
     )
 
 
-def _extract_embedded(payload: typing.Any) -> list[typing.Any]:  # noqa: ANN401
+def _extract_embedded(payload: typing.Any) -> list[typing.Any]:  # ruff: ignore[any-type]
     # The listing is either a plain list or a paginated envelope
     if isinstance(payload, list):
         return payload
@@ -197,8 +197,8 @@ class DswClient:
         method: str,
         path: str,
         params: dict[str, typing.Any] | None = None,
-        json: typing.Any = None,  # noqa: ANN401
-    ) -> typing.Any:  # noqa: ANN401
+        json: typing.Any = None,  # ruff: ignore[any-type]
+    ) -> typing.Any:  # ruff: ignore[any-type]
         try:
             async with httpx.AsyncClient(
                 base_url=self._api_url,
@@ -236,21 +236,21 @@ class DswClient:
         self,
         path: str,
         params: dict[str, typing.Any] | None = None,
-    ) -> typing.Any:  # noqa: ANN401
+    ) -> typing.Any:  # ruff: ignore[any-type]
         return await self._request('GET', path, params=params)
 
     async def post(
         self,
         path: str,
-        json: typing.Any = None,  # noqa: ANN401
-    ) -> typing.Any:  # noqa: ANN401
+        json: typing.Any = None,  # ruff: ignore[any-type]
+    ) -> typing.Any:  # ruff: ignore[any-type]
         return await self._request('POST', path, json=json)
 
     async def put(
         self,
         path: str,
-        json: typing.Any = None,  # noqa: ANN401
-    ) -> typing.Any:  # noqa: ANN401
+        json: typing.Any = None,  # ruff: ignore[any-type]
+    ) -> typing.Any:  # ruff: ignore[any-type]
         return await self._request('PUT', path, json=json)
 
     async def search_users(self, query: str, size: int) -> list[User]:
