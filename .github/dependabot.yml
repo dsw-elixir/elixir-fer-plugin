@@ -7,7 +7,6 @@ updates:
       day: 'saturday'
       time: '08:00'
       timezone: 'Europe/Prague'
-    target-branch: 'develop'
     assignees:
       - 'janslifka'
     groups:
@@ -23,7 +22,6 @@ updates:
       day: 'saturday'
       time: '08:00'
       timezone: 'Europe/Prague'
-    target-branch: 'develop'
     assignees:
       - 'MarekSuchanek'
 
@@ -34,6 +32,5 @@ updates:
       day: 'saturday'
       time: '08:00'
       timezone: 'Europe/Prague'
-    target-branch: 'develop'
     assignees:
       - 'janslifka'
