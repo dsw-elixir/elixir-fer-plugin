@@ -1,3 +1,4 @@
+import json
 import typing
 import uuid
 
@@ -90,6 +91,21 @@ class ProjectPerm(CamelCaseModel):
     perms: list[str] = pydantic.Field(default_factory=list)
 
 
+class ProjectDetail(CamelCaseModel):
+    """Subset of the project detail needed to check who may submit it."""
+
+    model_config = pydantic.ConfigDict(
+        alias_generator=pydantic.alias_generators.to_camel,
+        populate_by_name=True,
+        extra='ignore',
+    )
+
+    uuid: uuid.UUID
+    # Every project is in a workspace since DSW 5.0
+    workspace_uuid: uuid.UUID | None = None
+    permissions: list[ProjectPerm] = pydantic.Field(default_factory=list)
+
+
 class ProjectSettings(CamelCaseModel):
     """Subset of the project settings needed to change them back."""
 
@@ -107,6 +123,7 @@ class ProjectSettings(CamelCaseModel):
     document_template: dict[str, typing.Any] | None = None
     format_uuid: str | None = None
     language: str | None = None
+    document_template_language: str | None = None
     visibility: str
     sharing: str
     permissions: list[ProjectPerm] = pydantic.Field(default_factory=list)
@@ -157,6 +174,22 @@ def _extract_embedded(payload: typing.Any) -> list[typing.Any]:  # ruff: ignore[
                 if isinstance(value, list):
                     return value
     return []
+
+
+def _settings_values(value: typing.Any) -> dict[str, typing.Any]:  # ruff: ignore[any-type]
+    # The settings are stored as the JSON the plugin encodes, either as an
+    # object or as a string with it, possibly in a value envelope
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return {}
+    if isinstance(value, dict):
+        inner = value.get('value')
+        if isinstance(inner, (dict, str)):
+            return _settings_values(inner)
+        return value
+    return {}
 
 
 def resolve_api_url(api_url: str | None) -> str:
@@ -282,18 +315,11 @@ class DswClient:
         payload = await self.get('/users/current')
         return User.model_validate(payload)
 
-    async def get_project_perms(
-        self,
-        project_uuid: uuid.UUID,
-    ) -> list[ProjectPerm]:
-        # The project detail contains the permissions of all its members
+    async def get_project(self, project_uuid: uuid.UUID) -> ProjectDetail:
+        # The project detail contains its workspace and the permissions of
+        # all its members
         payload = await self.get(f'/projects/{project_uuid}')
-        if not isinstance(payload, dict):
-            return []
-        perms = payload.get('permissions')
-        if not isinstance(perms, list):
-            return []
-        return [ProjectPerm.model_validate(item) for item in perms]
+        return ProjectDetail.model_validate(payload)
 
     async def get_project_progress(
         self,
@@ -364,6 +390,8 @@ class DswClient:
                 'documentTemplateUuid': document_template.get('uuid'),
                 'formatUuid': settings.format_uuid,
                 'language': settings.language,
+                # Sent back as well, so that it is not cleared
+                'documentTemplateLanguage': settings.document_template_language,
             },
         )
 
@@ -386,17 +414,34 @@ class DswClient:
     async def get_plugin_settings(
         self,
         plugin_uuid: str,
+        workspace_uuid: uuid.UUID | None = None,
     ) -> dict[str, typing.Any]:
-        # The global plugin settings as stored by the wizard
-        path = f'/tenants/current/plugin-settings/{plugin_uuid}'
-        payload = await self.get(path)
-        if isinstance(payload, dict):
-            # Tolerate the settings being wrapped in a value envelope
-            value = payload.get('value')
-            if isinstance(value, dict):
-                return value
-            return payload
-        return {}
+        # The plugin settings as the wizard gives them to the plugin itself.
+        # Reading them through the settings API needs the right to manage the
+        # settings, which the user submitting an application does not have,
+        # but the bootstrap gives them to every signed-in user.
+        bootstrap = await self.get('/bootstrap')
+        if not isinstance(bootstrap, dict):
+            return {}
+
+        plugin_settings = bootstrap.get('pluginSettings')
+
+        # With more workspaces, a workspace can override the settings or
+        # disable the plugin, so take the ones in effect for the project
+        if bootstrap.get('multiWorkspace') and workspace_uuid is not None:
+            workspace_bootstrap = await self.get(
+                '/bootstrap/workspace',
+                params={'w': str(workspace_uuid)},
+            )
+            plugin_settings = (
+                workspace_bootstrap.get('pluginSettings')
+                if isinstance(workspace_bootstrap, dict)
+                else None
+            )
+
+        if not isinstance(plugin_settings, dict):
+            return {}
+        return _settings_values(plugin_settings.get(plugin_uuid))
 
     async def list_roles(self, query: str, size: int) -> list[Role]:
         # List DSW roles matching the query, sorted by name
@@ -404,6 +449,9 @@ class DswClient:
             'page': 0,
             'sort': 'name,asc',
             'size': size,
+            # The organization roles, which are the ones users have as their
+            # role; without a scope a multi-workspace tenant refuses the list
+            'tenant': 'true',
         }
         if query:
             params['q'] = query

@@ -47,8 +47,8 @@ class KnowledgeModelPackage(CamelCaseModel):
     uuid: uuid.UUID
     name: str
     description: str
-    organization_id: str
-    km_id: str
+    # Since DSW 5.0, one id instead of the organization and knowledge model ids
+    id: str
     version: str
 
 
@@ -57,6 +57,7 @@ class Project(CamelCaseModel):
     name: str
     is_template: bool
     knowledge_model_package: KnowledgeModelPackage
+    workspace_uuid: uuid.UUID | None = None
 
 
 class SubmitApplicationRequest(CamelCaseModel):
@@ -105,12 +106,13 @@ async def _check_can_submit(
     # Returns the current user, the plugin settings, and why they may not
     # submit, if they may not
     current_user = await client.get_current_user()
+    project = await client.get_project(project_uuid)
 
     # The settings are read from the wizard, never from the request, which the
-    # user could tamper with
+    # user could tamper with; those of the project's workspace are in effect
     plugin_uuid = get_config().plugin_uuid
     settings = PluginSettings.model_validate(
-        await client.get_plugin_settings(plugin_uuid),
+        await client.get_plugin_settings(plugin_uuid, project.workspace_uuid),
     )
 
     if settings.eligible_role_uuid is None:
@@ -127,12 +129,11 @@ async def _check_can_submit(
         )
         return current_user, settings, reason
 
-    perms = await client.get_project_perms(project_uuid)
     is_owner = any(
         perm.member.type == USER_MEMBER_TYPE
         and perm.member.uuid == current_user.uuid
         and OWNER_PERM in perm.perms
-        for perm in perms
+        for perm in project.permissions
     )
     if not is_owner:
         reason = 'Only the owner of the project can submit the application'
