@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import logging
 import typing
 import uuid
@@ -143,7 +143,7 @@ async def _check_can_submit(
 
 
 def _submission_note(user: User) -> str:
-    timestamp = datetime.datetime.now(tz=datetime.UTC)
+    timestamp = dt.datetime.now(tz=dt.UTC)
     return (
         f'Submitted by {user.first_name} {user.last_name} ({user.uuid}) '
         f'at {timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")}.'
