@@ -1,16 +1,18 @@
-import { FlashError } from '@ds-wizard/plugin-sdk/ui/Flash'
-import { useEffect, useState } from 'react'
+import { SelectField, SelectOption } from '@ds-wizard/plugin-sdk/ui/Field'
+import { ReactNode, useEffect, useState } from 'react'
 
 import { listRoles, Role } from '../api/service'
 
 type RoleSelectProps = {
+    label: string
+    hint?: ReactNode
     selectedUuid: string | null
     onChange: (roleUuid: string | null) => void
 }
 
-export default function RoleSelect({ selectedUuid, onChange }: RoleSelectProps) {
+export default function RoleSelect({ label, hint, selectedUuid, onChange }: RoleSelectProps) {
     const [roles, setRoles] = useState<Role[] | null>(null)
-    const [error, setError] = useState<string | null>(null)
+    const [error, setError] = useState<string | undefined>(undefined)
 
     useEffect(() => {
         let cancelled = false
@@ -18,7 +20,7 @@ export default function RoleSelect({ selectedUuid, onChange }: RoleSelectProps) 
             .then((loadedRoles) => {
                 if (!cancelled) {
                     setRoles(loadedRoles)
-                    setError(null)
+                    setError(undefined)
                 }
             })
             .catch(() => {
@@ -37,25 +39,26 @@ export default function RoleSelect({ selectedUuid, onChange }: RoleSelectProps) 
     const isSelectedKnown =
         selectedUuid === null || (roles ?? []).some((role) => role.uuid === selectedUuid)
 
+    const options: SelectOption[] = [
+        {
+            value: '',
+            label: roles === null ? 'Loading…' : 'No role selected (nobody can submit)',
+        },
+        ...(roles ?? []).map((role) => ({ value: role.uuid, label: role.name })),
+        ...(!isSelectedKnown && selectedUuid !== null
+            ? [{ value: selectedUuid, label: `${selectedUuid} (unknown)` }]
+            : []),
+    ]
+
     return (
-        <>
-            <select
-                className="form-select"
-                disabled={roles === null}
-                value={selectedUuid ?? ''}
-                onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-            >
-                <option value="">
-                    {roles === null ? 'Loading…' : 'No role selected (nobody can submit)'}
-                </option>
-                {(roles ?? []).map((role) => (
-                    <option value={role.uuid} key={role.uuid}>
-                        {role.name}
-                    </option>
-                ))}
-                {!isSelectedKnown && <option value={selectedUuid}>{selectedUuid} (unknown)</option>}
-            </select>
-            {error && <FlashError>{error}</FlashError>}
-        </>
+        <SelectField
+            label={label}
+            hint={hint}
+            disabled={roles === null}
+            error={error}
+            value={selectedUuid ?? ''}
+            onChange={(value) => onChange(value === '' ? null : value)}
+            options={options}
+        />
     )
 }
