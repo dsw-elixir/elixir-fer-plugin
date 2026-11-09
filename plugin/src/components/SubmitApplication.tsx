@@ -1,5 +1,11 @@
 import { ProjectActionComponentProps } from '@ds-wizard/plugin-sdk/elements'
-import { FlashError, FlashSuccess, FlashWarning } from '@ds-wizard/plugin-sdk/ui/Flash'
+import { Alert } from '@ds-wizard/plugin-sdk/ui/Alert'
+import { Button } from '@ds-wizard/plugin-sdk/ui/Button'
+import { DialogBody, DialogFooter, DialogHeader } from '@ds-wizard/plugin-sdk/ui/Dialog'
+import { Icon, Spinner } from '@ds-wizard/plugin-sdk/ui/Icon'
+import { Stack } from '@ds-wizard/plugin-sdk/ui/Layout'
+import { Link } from '@ds-wizard/plugin-sdk/ui/Link'
+import { Body, Muted } from '@ds-wizard/plugin-sdk/ui/Text'
 import { Fragment, ReactNode, useEffect, useState } from 'react'
 
 import {
@@ -28,7 +34,7 @@ function renderMessage(message: string): ReactNode {
             {prefix && <strong>{prefix}</strong>}
             {rest.split(EMAIL_PATTERN).map((part, index) => (
                 <Fragment key={index}>
-                    {index % 2 === 1 ? <a href={`mailto:${part}`}>{part}</a> : part}
+                    {index % 2 === 1 ? <Link href={`mailto:${part}`}>{part}</Link> : part}
                 </Fragment>
             ))}
         </>
@@ -47,21 +53,22 @@ function errorMessage(error: unknown, fallback: string): string {
     return error instanceof Error ? error.message : fallback
 }
 
-function ProgressFlash({ progress }: { progress: ProjectProgress }) {
+function ProgressNote({ progress }: { progress: ProjectProgress }) {
     const total = progress.answeredQuestions + progress.unansweredQuestions
     const incomplete = progress.chapters.filter((chapter) => chapter.unansweredQuestions > 0)
 
     if (progress.unansweredQuestions === 0) {
         return (
-            <p className="text-muted">
-                <i className="fas fa-check me-1" />
-                All {total} questions are answered.
-            </p>
+            <Body>
+                <Muted>
+                    <Icon name="fa-check" /> All {total} questions are answered.
+                </Muted>
+            </Body>
         )
     }
 
     return (
-        <FlashWarning>
+        <Alert tone="warning">
             <span>
                 Only{' '}
                 <strong>
@@ -80,7 +87,7 @@ function ProgressFlash({ progress }: { progress: ProjectProgress }) {
                     </>
                 )}
             </span>
-        </FlashWarning>
+        </Alert>
     )
 }
 
@@ -183,69 +190,66 @@ export default function SubmitApplication({
 
     return (
         <>
-            <div className="modal-header">
-                <h5 className="modal-title">Submit application</h5>
-            </div>
-            <div className="modal-body">
+            <DialogHeader title="Submit application" />
+            <DialogBody>
                 {state.type === 'done' ? (
-                    <FlashSuccess>{state.message}</FlashSuccess>
+                    <Alert tone="success">{state.message}</Alert>
                 ) : (
-                    <>
-                        <FlashWarning>
+                    <Stack>
+                        <Alert tone="warning">
                             <span>
                                 <strong>WARNING:</strong> For this Pilot call only invited resources
                                 may apply.
                             </span>
-                        </FlashWarning>
-                        <p>
+                        </Alert>
+                        <Body>
                             Once the application is submitted, the project becomes read-only. All of
                             its current users will no longer be able to edit the answers or add
                             comments.
-                        </p>
-                        <p>
+                        </Body>
+                        <Body>
                             The designated users from the ELIXIR Hub will be added to the project
                             and notified to process the application.
-                        </p>
-                        {progress !== null && <ProgressFlash progress={progress} />}
+                        </Body>
+                        {progress !== null && <ProgressNote progress={progress} />}
                         {state.type === 'checking' && (
-                            <p className="text-muted">
-                                <i className="fas fa-spinner fa-spin me-1" />
-                                Checking whether you can submit the application&hellip;
-                            </p>
+                            <Body>
+                                <Muted>
+                                    <Spinner /> Checking whether you can submit the
+                                    application&hellip;
+                                </Muted>
+                            </Body>
                         )}
                         {(state.type === 'blocked' || state.type === 'error') && (
-                            <FlashError>
+                            <Alert tone="danger">
                                 <span>{renderMessage(state.message)}</span>
-                            </FlashError>
+                            </Alert>
                         )}
-                    </>
+                    </Stack>
                 )}
-            </div>
-            <div className="modal-footer">
+            </DialogBody>
+            <DialogFooter>
                 {state.type === 'done' ? (
-                    <button className="btn btn-primary" onClick={onActionClose}>
+                    <Button variant="primary" onClick={onActionClose}>
                         Close
-                    </button>
+                    </Button>
                 ) : (
                     <>
-                        <button
-                            className="btn btn-primary"
+                        <Button variant="ghost" disabled={isSubmitting} onClick={onActionClose}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            icon="fa-paper-plane"
+                            loading={isSubmitting}
                             disabled={!canSubmit}
                             onClick={handleSubmit}
                         >
-                            {isSubmitting && <i className="fas fa-spinner fa-spin me-1" />}
                             Submit application
-                        </button>
-                        <button
-                            className="btn btn-secondary"
-                            disabled={isSubmitting}
-                            onClick={onActionClose}
-                        >
-                            Cancel
-                        </button>
+                        </Button>
                     </>
                 )}
-            </div>
+            </DialogFooter>
         </>
     )
 }

@@ -1,11 +1,19 @@
-import { FlashError } from '@ds-wizard/plugin-sdk/ui/Flash'
-import { useEffect, useState } from 'react'
+import { Alert } from '@ds-wizard/plugin-sdk/ui/Alert'
+import { Button, IconButton } from '@ds-wizard/plugin-sdk/ui/Button'
+import { TextField } from '@ds-wizard/plugin-sdk/ui/Field'
+import { Icon, Spinner } from '@ds-wizard/plugin-sdk/ui/Icon'
+import { Stack } from '@ds-wizard/plugin-sdk/ui/Layout'
+import { List, ListItem } from '@ds-wizard/plugin-sdk/ui/ListItem'
+import { Muted } from '@ds-wizard/plugin-sdk/ui/Text'
+import { ReactNode, useEffect, useState } from 'react'
 
 import { getUser, searchUsers, User } from '../api/service'
 
 const SEARCH_DEBOUNCE_MS = 300
 
 type UserSelectProps = {
+    label: string
+    hint?: ReactNode
     selectedUuids: string[]
     onChange: (userUuids: string[]) => void
 }
@@ -14,7 +22,7 @@ function userName(user: User): string {
     return `${user.firstName} ${user.lastName}`.trim()
 }
 
-export default function UserSelect({ selectedUuids, onChange }: UserSelectProps) {
+export default function UserSelect({ label, hint, selectedUuids, onChange }: UserSelectProps) {
     // Only UUIDs are stored in the settings, the rest is loaded for display
     const [knownUsers, setKnownUsers] = useState<Record<string, User | null>>({})
     const [query, setQuery] = useState('')
@@ -95,95 +103,100 @@ export default function UserSelect({ selectedUuids, onChange }: UserSelectProps)
     const availableResults = results.filter((user) => !selectedUuids.includes(user.uuid))
 
     return (
-        <div
-            onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) {
-                    setIsOpen(false)
-                }
-            }}
-        >
+        <Stack>
+            <div
+                onFocus={() => setIsOpen(true)}
+                onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setIsOpen(false)
+                    }
+                }}
+            >
+                <Stack>
+                    <TextField
+                        label={label}
+                        hint={hint}
+                        type="search"
+                        placeholder="Search users by name or email…"
+                        value={query}
+                        onChange={(value) => {
+                            setQuery(value)
+                            setIsOpen(true)
+                        }}
+                    />
+                    {isOpen && (
+                        <div style={{ maxHeight: '16rem', overflowY: 'auto' }}>
+                            {isSearching ? (
+                                <Muted>
+                                    <Spinner /> Searching…
+                                </Muted>
+                            ) : availableResults.length === 0 ? (
+                                <Muted>No users found.</Muted>
+                            ) : (
+                                <List>
+                                    {availableResults.map((user) => (
+                                        <ListItem
+                                            key={user.uuid}
+                                            title={userName(user)}
+                                            description={user.email}
+                                            actions={
+                                                <Button
+                                                    size="small"
+                                                    icon="fa-plus"
+                                                    onClick={() => addUser(user)}
+                                                >
+                                                    Add
+                                                </Button>
+                                            }
+                                        />
+                                    ))}
+                                </List>
+                            )}
+                        </div>
+                    )}
+                </Stack>
+            </div>
+
+            {error && <Alert tone="danger">{error}</Alert>}
+
             {selectedUuids.length > 0 && (
-                <ul className="list-group mb-2">
+                <List>
                     {selectedUuids.map((userUuid) => {
                         const user = knownUsers[userUuid]
 
                         return (
-                            <li
-                                className="list-group-item d-flex align-items-center"
+                            <ListItem
                                 key={userUuid}
-                            >
-                                <span className="flex-grow-1">
-                                    {user ? (
-                                        <>
-                                            {userName(user)}{' '}
-                                            <span className="text-muted">({user.email})</span>
-                                        </>
+                                title={
+                                    user ? (
+                                        userName(user)
                                     ) : user === null ? (
-                                        <span className="text-muted">
-                                            <i className="fas fa-exclamation-triangle me-1" />
+                                        <Muted>
+                                            <Icon
+                                                name="fa-triangle-exclamation"
+                                                label="Unknown user"
+                                            />{' '}
                                             {userUuid}
-                                        </span>
+                                        </Muted>
                                     ) : (
-                                        <span className="text-muted">Loading&hellip;</span>
-                                    )}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-secondary"
-                                    title="Remove user"
-                                    onClick={() => removeUser(userUuid)}
-                                >
-                                    <i className="fas fa-trash" />
-                                </button>
-                            </li>
+                                        <Muted>Loading…</Muted>
+                                    )
+                                }
+                                description={user ? user.email : undefined}
+                                actions={
+                                    <IconButton
+                                        icon="fa-trash"
+                                        label="Remove user"
+                                        size="small"
+                                        variant="ghost"
+                                        onClick={() => removeUser(userUuid)}
+                                    />
+                                }
+                            />
                         )
                     })}
-                </ul>
+                </List>
             )}
-
-            <div className="position-relative">
-                <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search users by name or email&hellip;"
-                    value={query}
-                    onChange={(e) => {
-                        setQuery(e.target.value)
-                        setIsOpen(true)
-                    }}
-                    onFocus={() => setIsOpen(true)}
-                />
-                {isOpen && (
-                    <div
-                        className="list-group position-absolute w-100 shadow-sm"
-                        style={{ zIndex: 1000, maxHeight: '16rem', overflowY: 'auto' }}
-                    >
-                        {isSearching && (
-                            <span className="list-group-item text-muted">
-                                <i className="fas fa-spinner fa-spin me-1" />
-                                Searching&hellip;
-                            </span>
-                        )}
-                        {!isSearching &&
-                            availableResults.map((user) => (
-                                <button
-                                    type="button"
-                                    className="list-group-item list-group-item-action"
-                                    key={user.uuid}
-                                    onClick={() => addUser(user)}
-                                >
-                                    {userName(user)}{' '}
-                                    <span className="text-muted">({user.email})</span>
-                                </button>
-                            ))}
-                        {!isSearching && availableResults.length === 0 && (
-                            <span className="list-group-item text-muted">No users found.</span>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {error && <FlashError>{error}</FlashError>}
-        </div>
+        </Stack>
     )
 }
