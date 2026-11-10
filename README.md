@@ -35,6 +35,12 @@ users that process them are configured in the plugin settings in the wizard.
 
 ## Changelog
 
+### 0.3.0
+
+- Updated for DSW 5.0 (DSW Plugin SDK 0.12.0, Wizard 5.0 design system UI, and
+  the service uses the DSW 5.0 API, incl. workspace-scoped plugin settings)
+- Updated dependencies (incl. FastAPI 0.162 for the service)
+
 ### 0.2.0
 
 - Updated DSW Plugin SDK to 0.11.0
