@@ -28,7 +28,7 @@ opentelemetry-api==1.45.1
     # via fastapi
 pydantic==2.14.1
     # via fastapi
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via pydantic
 pyyaml==6.0.3
     # via elixir-fer-plugin-service (pyproject.toml)
