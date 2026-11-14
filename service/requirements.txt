@@ -12,7 +12,7 @@ certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
-fastapi==0.162.0
+fastapi==0.162.4
     # via elixir-fer-plugin-service (pyproject.toml)
 h11==0.16.0
     # via httpcore
